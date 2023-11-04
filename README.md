@@ -52,7 +52,7 @@ response = {
 # PUT /users/
 ```python
 body = {
-    ''
+    'name'
 }
 
 response = {
