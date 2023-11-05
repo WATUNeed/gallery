@@ -7,7 +7,7 @@ from backend.api.base_classes.models import Base
 from backend.api.user.mixin import UserMixin
 
 
-class User(UserMixin, Base):
+class User(Base, UserMixin):
     __tablename__ = 'UserTable'
 
     id: Mapped[UUID] = mapped_column(

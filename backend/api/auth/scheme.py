@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from backend.api.base_classes.scheme import BaseBody
+from backend.api.base_classes.scheme import BaseScheme
 
 
-class SignBody(BaseBody):
+class SignBody(BaseScheme):
     login: str
     password: str
 

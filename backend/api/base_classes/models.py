@@ -6,7 +6,7 @@ from backend.api.base_classes.mixin import BaseMixin
 from backend.config.database import DB_CONFIG
 
 
-class Base(BaseMixin, AsyncAttrs, DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase, BaseMixin):
     __abstract__ = True
 
     def __repr__(self):

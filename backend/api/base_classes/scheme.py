@@ -2,8 +2,13 @@ from pydantic import BaseModel
 from starlette import status
 
 
-class BaseBody(BaseModel):
+class BaseScheme(BaseModel):
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
     class DictConfig:
+        orm_mode = True
         from_attributes = True
         populate_by_name = True
         use_enum_values = True

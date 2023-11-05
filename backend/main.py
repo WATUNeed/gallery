@@ -11,8 +11,9 @@ from backend.middleware.process_time import ProcessTimerMiddleware
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
     from backend.api.auth.router import auth_router
+    from backend.api.user.routers import users_router
 
-    [app_.include_router(router) for router in (auth_router,)]
+    [app_.include_router(router) for router in (auth_router, users_router)]
 
     from backend.api.user.models import User
 

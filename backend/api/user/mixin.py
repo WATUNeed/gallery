@@ -1,7 +1,10 @@
-from typing import Self
+from typing import Self, Any
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.api.user.scheme import ShareUserScheme
 
 
 class UserMixin:
@@ -14,3 +17,9 @@ class UserMixin:
         )
         result = (await session.execute(query)).one_or_none()
         return None if result is None else result[0]
+
+    @classmethod
+    async def get_all(cls, session: AsyncSession) -> list[ShareUserScheme]:
+        query = select(cls)
+        result = (await session.execute(query)).scalars()
+        return [ShareUserScheme.model_validate(user) for user in result]
