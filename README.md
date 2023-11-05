@@ -93,6 +93,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
+                'gallery_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -125,6 +126,7 @@ response = {
                     'description': ...,
                     'file': ...,
                     'rate': ..., 
+                    'gallery_id': ...,
                     'author': {
                         'id': ...,
                         'name': ...,
@@ -158,6 +160,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
+                'gallery_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -188,6 +191,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
+                'gallery_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -218,6 +222,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
+                'gallery_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -249,6 +254,7 @@ body = {
     'description': ...,
     'file': ...,
     'author_id': ...,
+    'gallery_id': ...,
 }
 
 response = {
@@ -259,6 +265,7 @@ response = {
         'description': ...,
         'file': ...,
         'rate': ..., 
+        'gallery_id': ...,
         'author': {
             'id': ...,
             'name': ...,
@@ -280,6 +287,7 @@ response = {
             'description': ...,
             'file': ...,
             'rate': ..., 
+            'gallery_id': ...,
             'author': {
                 'id': ...,
                 'name': ...,
@@ -313,6 +321,7 @@ response = {
             'description': ...,
             'file': ...,
             'rate': ..., 
+            'gallery_id': ...,
             'author': {
                 'id': ...,
                 'name': ...,

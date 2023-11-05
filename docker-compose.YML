@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  backend:
+    container_name: gallery-backend
+    ports:
+      - 8000:8000
+    build:
+      dockerfile: backend.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+
+  postgres:
+    container_name: gallery-postgres
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - PGDATA:/data/postgres
+    volumes:
+      - postgres:/data/postgres
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+
+  redis:
+    container_name: gallery-redis
+    image: redis:7-alpine
+    hostname: redis
+    command:
+      - 'redis-server'
+      - '--requirepass'
+      - '${REDIS_PASSWORD}'
+      - '--save'
+      - '60 1000'
+    ports:
+      - 6379:6379
+
+  rabbitmq:
+    container_name: gallery-rabbitmq
+    hostname: rabbitmq
+    image: rabbitmq:management-alpine
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    ports:
+      - 15675:15675
+      - 5675:5675
+
+  pgadmin:
+    container_name: gallery-pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - 5055:80
+    restart: unless-stopped
+
+volumes:
+  postgres:
+  pgadmin:
+  rabbitmq:
+  data: {}
