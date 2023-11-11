@@ -28,12 +28,10 @@ async def get_users(
 @users_router.put(
     path='/',
     status_code=status.HTTP_200_OK,
-    response_model=ShareUserScheme,
 )
 async def update_users(
         user_id: UUID,
         body: UpdateUser = Body(...),
         session: AsyncSession = Depends(get_session_generator),
-) -> ShareUserScheme:
-    user = await User.update(session, user_id, body.model_dump())
-    return ShareUserScheme.model_validate(user)
+):
+    await User.update(session, user_id, body.model_dump())

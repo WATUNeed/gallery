@@ -10,13 +10,15 @@ from backend.middleware.process_time import ProcessTimerMiddleware
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
-    from backend.api.auth.router import auth_router
+    from backend.api.auth.routers import auth_router
     from backend.api.user.routers import users_router
-
-    [app_.include_router(router) for router in (auth_router, users_router)]
+    from backend.api.collection.routers import collection_router
+    from backend.api.photo.routers import photo_router
+    [app_.include_router(router) for router in (auth_router, users_router, collection_router, photo_router)]
 
     from backend.api.user.models import User
-
+    from backend.api.collection.models import Collection
+    from backend.api.photo.models import Photo
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

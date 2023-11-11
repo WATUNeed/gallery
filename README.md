@@ -73,7 +73,7 @@ response = {
 ```
 
 
-# POST /galleries/
+# POST /collections/
 ```python
 body = {
     'name': ...,
@@ -93,7 +93,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
-                'gallery_id': ...,
+                'collection_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -107,7 +107,7 @@ response = {
 ```
 
 
-# GET /galleries/
+# GET /collections/
 ```python
 params = {
     'order_by': ...,
@@ -126,7 +126,7 @@ response = {
                     'description': ...,
                     'file': ...,
                     'rate': ..., 
-                    'gallery_id': ...,
+                    'collection_id': ...,
                     'author': {
                         'id': ...,
                         'name': ...,
@@ -141,7 +141,7 @@ response = {
 ```
 
 
-# PUT /galleries/
+# PUT /collections/
 ```python
 body = {
     'name': ...,
@@ -160,7 +160,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
-                'gallery_id': ...,
+                'collection_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -173,7 +173,7 @@ response = {
 }
 ```
 
-# PATCH /galleries/photos/append/
+# PATCH /collections/photos/append/
 ```python
 body = {
     'photos': [...,],
@@ -191,7 +191,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
-                'gallery_id': ...,
+                'collection_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -204,7 +204,7 @@ response = {
 }
 ```
 
-# DELETE /galleries/photos/pop/
+# DELETE /collections/photos/pop/
 ```python
 body = {
     'photos': [...,],
@@ -222,7 +222,7 @@ response = {
                 'description': ...,
                 'file': ...,
                 'rate': ..., 
-                'gallery_id': ...,
+                'collection_id': ...,
                 'author': {
                     'id': ...,
                     'name': ...,
@@ -235,10 +235,10 @@ response = {
 }
 ```
 
-# DELETE /galleries/
+# DELETE /collections/
 ```python
 params = {
-    'gallery_id': ...,
+    'collection_id': ...,
 }
 
 response = {
@@ -246,7 +246,7 @@ response = {
 }
 ```
 
-# POST /galleries/photos/
+# POST /collections/photos/
 ```python
 body = {
     'id': ...,
@@ -254,7 +254,7 @@ body = {
     'description': ...,
     'file': ...,
     'author_id': ...,
-    'gallery_id': ...,
+    'collection_id': ...,
 }
 
 response = {
@@ -265,7 +265,7 @@ response = {
         'description': ...,
         'file': ...,
         'rate': ..., 
-        'gallery_id': ...,
+        'collection_id': ...,
         'author': {
             'id': ...,
             'name': ...,
@@ -276,7 +276,7 @@ response = {
 }
 ```
 
-# GET /galleries/photos/
+# GET /collections/photos/
 ```python
 response = {
     'status': 200,
@@ -287,7 +287,7 @@ response = {
             'description': ...,
             'file': ...,
             'rate': ..., 
-            'gallery_id': ...,
+            'collection_id': ...,
             'author': {
                 'id': ...,
                 'name': ...,
@@ -299,7 +299,7 @@ response = {
 }
 ```
 
-# PUT /galleries/photos/
+# PUT /collections/photos/
 ```python
 params = {
     'photo_id': ...,
@@ -321,7 +321,7 @@ response = {
             'description': ...,
             'file': ...,
             'rate': ..., 
-            'gallery_id': ...,
+            'collection_id': ...,
             'author': {
                 'id': ...,
                 'name': ...,
@@ -333,7 +333,7 @@ response = {
 }
 ```
 
-# DELETE /galleries/photos/
+# DELETE /collections/photos/
 ```python
 params = {
     'photo_id': ...,
@@ -344,7 +344,7 @@ response = {
 }
 ```
 
-# POST /galleries/photos/rate/
+# POST /collections/photos/rate/
 ```python
 body = {
     'photo_id': ...,
