@@ -9,7 +9,6 @@ from backend.api.collection.mixin import CollectionMixin
 
 if typing.TYPE_CHECKING:
     from backend.api.user.models import User
-    from backend.api.photo.models import Photo
 
 
 def _user():
@@ -33,4 +32,5 @@ class Collection(Base, CollectionMixin):
     description: Mapped[str] = mapped_column(String(256), nullable=True)
 
     photos: Mapped[list['Photo']] = relationship(
-        cascade='all,delete', lazy='subquery', back_populates='collection')
+        cascade='all,delete', lazy='subquery', back_populates='collection'
+    )

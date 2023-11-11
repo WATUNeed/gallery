@@ -1,5 +1,2 @@
-from backend.api.base_classes.mixin import BaseMixin
-
-
-class PhotoMixin(BaseMixin):
+class PhotoMixin:
     pass

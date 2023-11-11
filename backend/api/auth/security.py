@@ -1,7 +1,7 @@
 from jose import jwt, JWTError
 import hashlib
 
-from backend.api.auth.exceptions import InvalidCredentialsException
+from backend.api.auth.exceptions import AuthException
 from backend.config.auth import AUTH_CONFIG
 
 
@@ -25,4 +25,4 @@ class JWT:
         try:
             return jwt.decode(token, AUTH_CONFIG.secret, AUTH_CONFIG.algorithm)
         except JWTError:
-            raise InvalidCredentialsException
+            raise AuthException.InvalidCredentials

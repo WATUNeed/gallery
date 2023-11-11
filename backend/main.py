@@ -18,7 +18,8 @@ async def lifespan(app_: FastAPI):
 
     from backend.api.user.models import User
     from backend.api.collection.models import Collection
-    from backend.api.photo.models import Photo
+    from backend.api.photo.models import Photo, PhotoRate
+    from backend.api.rate.models import Rate
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

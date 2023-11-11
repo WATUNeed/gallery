@@ -9,17 +9,11 @@ from backend.api.photo.mixin import PhotoMixin
 
 if typing.TYPE_CHECKING:
     from backend.api.user.models import User
-    from backend.api.collection.models import Collection
 
 
 def _user():
     from backend.api.user.models import User
     return User
-
-
-def _collection():
-    from backend.api.collection.models import Collection
-    return Collection
 
 
 class Photo(Base, PhotoMixin):
@@ -30,9 +24,9 @@ class Photo(Base, PhotoMixin):
     )
 
     collection_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey(_collection().id), nullable=False
+        UUID(as_uuid=True), ForeignKey('CollectionTable.id'), nullable=False
     )
-    collection: Mapped[_collection()] = relationship(
+    collection: Mapped['Collection'] = relationship(
         cascade="save-update", lazy='subquery', back_populates='photos'
     )
 
@@ -44,3 +38,23 @@ class Photo(Base, PhotoMixin):
     name: Mapped[str] = mapped_column(String(32), nullable=False)
     description: Mapped[str] = mapped_column(String(256), nullable=True)
     file: Mapped[str] = mapped_column(String, nullable=False)
+
+    rating: Mapped[list["Rate"]] = relationship(
+        secondary="Photo_Rate", back_populates="photos", viewonly=True
+    )
+
+    rating_associations: Mapped[list["PhotoRate"]] = relationship(
+        back_populates="photo"
+    )
+
+
+class PhotoRate(Base):
+    __tablename__ = "Photo_Rate"
+
+    rate_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("RateTable.id"), primary_key=True)
+
+    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("PhotoTable.id"), primary_key=True)
+
+    rate: Mapped["Rate"] = relationship(back_populates="photos_associations")
+
+    photo: Mapped["Photo"] = relationship(back_populates="rating_associations")

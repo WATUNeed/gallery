@@ -1,20 +1,17 @@
-from typing import Optional
 from uuid import UUID
-
-from pydantic import Field
 
 from backend.api.base_classes.scheme import BaseScheme
 
 
-class ShareUserScheme(BaseScheme):
-    id: UUID
-    name: Optional[str] = Field(default=None)
-    surname: Optional[str] = Field(default=None)
-    patronymic: Optional[str] = Field(default=None)
-    login: str
+class UserScheme:
+    class PutBody(BaseScheme):
+        name: str | None = None
+        surname: str | None = None
+        patronymic: str | None = None
 
-
-class UpdateUser(BaseScheme):
-    name: Optional[str] = Field(default=None)
-    surname: Optional[str] = Field(default=None)
-    patronymic: Optional[str] = Field(default=None)
+    class ShareView(BaseScheme):
+        id: UUID
+        name: str | None = None
+        surname: str | None = None
+        patronymic: str | None = None
+        login: str

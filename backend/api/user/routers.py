@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.user.models import User
-from backend.api.user.scheme import ShareUserScheme, UpdateUser
+from backend.api.user.scheme import UserScheme
 from backend.depends.session import get_session_generator
 
 users_router = APIRouter(
@@ -16,11 +16,11 @@ users_router = APIRouter(
 @users_router.get(
     path='/',
     status_code=status.HTTP_200_OK,
-    response_model=list[ShareUserScheme],
+    response_model=list[UserScheme.ShareView],
 )
 async def get_users(
         session: AsyncSession = Depends(get_session_generator),
-) -> list[ShareUserScheme]:
+) -> list[UserScheme.ShareView]:
     users = await User.get_all(session)
     return users
 
@@ -31,7 +31,7 @@ async def get_users(
 )
 async def update_users(
         user_id: UUID,
-        body: UpdateUser = Body(...),
+        body: UserScheme.PutBody = Body(...),
         session: AsyncSession = Depends(get_session_generator),
 ):
     await User.update(session, user_id, body.model_dump())

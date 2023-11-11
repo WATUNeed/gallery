@@ -11,9 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 COPY requirements/ /tmp/requirements/
 
-RUN python3 -m venv /src/venv/ &&  \
-    . /src/venv/bin/activate &&  \
-    pip install -U pip &&  \
+RUN pip install -U pip &&  \
     pip install --no-cache-dir -r /tmp/requirements/backend.txt
 
 COPY backend/ /src/backend/
@@ -22,5 +20,5 @@ COPY backend/ /src/backend/
 
 WORKDIR /src/
 
-CMD ["/bin/bash", "-c", "source /src/venv/bin/activate && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
+# CMD ["/bin/bash", "-c", "source uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
 # CMD ["/bin/bash", "-c", "source /src/venv/bin/activate && pytest -s -vv backend/tests/* -W ignore::DeprecationWarning && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]

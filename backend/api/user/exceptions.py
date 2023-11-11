@@ -1,22 +1,7 @@
-from backend.api.base_classes.exceptions import BaseHTTPException
-from backend.api.base_classes.scheme import BadRequestResponse, NotFoundResponse
+from fastapi import HTTPException, status
 
 
-class EmailAlreadyInUseException(BaseHTTPException):
-    response = BadRequestResponse(description='EMAIL_ALREADY_IN_USE')
+class UserException:
+    NotFound = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    LoginAlreadyUsed = HTTPException(status_code=status.HTTP_409_CONFLICT, detail='This login already in used.')
 
-
-class LoginAlreadyInUseException(BaseHTTPException):
-    response = BadRequestResponse(description='This login already in used.')
-
-
-class TelegramAlreadyInUseException(BaseHTTPException):
-    response = BadRequestResponse(description='TELEGRAM_ALREADY_IN_USE')
-
-
-class UserNotFoundException(BaseHTTPException):
-    response = NotFoundResponse(description="User not found.")
-
-
-class PermissionDenyUpdateException(BaseHTTPException):
-    response = BadRequestResponse(description='CANNOT_CHANGE_DATA_ABOUT_OTHER_USERS')

@@ -1,15 +1,19 @@
+import typing
 from typing import Self, Any
 from uuid import UUID
 
-from pydantic import BaseModel
 from sqlalchemy import Update
 from sqlalchemy.ext.asyncio import AsyncSession
-
 
 class BaseMixin:
     @classmethod
     async def update(cls, session: AsyncSession, id_: UUID | int, data_to_update: dict[str, Any]):
-        await session.execute(Update(cls).where(cls.id == id_), data_to_update)
+        query = Update(
+            cls
+        ).where(
+            cls.id == id_
+        )
+        await session.execute(query, data_to_update)
 
     @classmethod
     async def delete(cls, session: AsyncSession, id_: UUID):

@@ -3,11 +3,8 @@ from typing import Self
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.base_classes.mixin import BaseMixin
-from backend.api.user.scheme import ShareUserScheme
 
-
-class UserMixin(BaseMixin):
+class UserMixin:
     @classmethod
     async def get_by_login(cls, session: AsyncSession, login: str) -> Self:
         query = select(
@@ -19,6 +16,5 @@ class UserMixin(BaseMixin):
         return None if result is None else result[0]
 
     @classmethod
-    async def get_all(cls, session: AsyncSession) -> list[ShareUserScheme]:
-        result = (await session.execute(select(cls))).scalars()
-        return [ShareUserScheme.model_validate(user) for user in result]
+    async def get_all(cls, session: AsyncSession):
+        return await session.scalars(select(cls))

@@ -11,10 +11,10 @@ class SignBody(BaseScheme):
     password: str
 
 
-class RefreshToken(BaseModel):
+class TokenPayload(BaseModel):
     sub: str | UUID
     exp: datetime
 
 
-class SignResponse(BaseModel):
+class Token(BaseModel):
     token: str
