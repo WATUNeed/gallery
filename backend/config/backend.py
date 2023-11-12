@@ -20,6 +20,8 @@ class BackendConfig(BaseSettings):
     refresh: str = 'refresh'
     refresh_token_ttl: int = 2 * 60 * 100
 
+    collection_path: str = '/tmp/collections/'
+
     @cached_property
     def get_app_config(self) -> dict[str, str | bool | None]:
         return {

@@ -1,13 +1,13 @@
-from typing import Self
+import typing
 
-from sqlalchemy import select
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class UserMixin:
     @classmethod
-    async def get_by_login(cls, session: AsyncSession, login: str) -> Self:
-        query = select(
+    async def get_by_login(cls, session: AsyncSession, login: str) -> typing.Self:
+        query = sa.select(
             cls
         ).where(
             cls.login == login
@@ -16,5 +16,5 @@ class UserMixin:
         return None if result is None else result[0]
 
     @classmethod
-    async def get_all(cls, session: AsyncSession):
-        return await session.scalars(select(cls))
+    async def get_all(cls, session: AsyncSession) -> sa.ScalarResult[typing.Self]:
+        return await session.scalars(sa.select(cls))

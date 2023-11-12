@@ -1,9 +1,9 @@
-import typing
 from typing import Self, Any
 from uuid import UUID
 
 from sqlalchemy import Update
 from sqlalchemy.ext.asyncio import AsyncSession
+
 
 class BaseMixin:
     @classmethod

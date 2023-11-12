@@ -30,3 +30,9 @@ class CollectionMixin:
             cls.id == collection_id
         )
         return (await session.execute(query)).all()
+
+
+class CollectionDownloadQueryHistoryMixin:
+    @classmethod
+    async def get_history(cls, session: AsyncSession):
+        return await session.scalars(sa.select(cls))

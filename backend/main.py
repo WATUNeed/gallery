@@ -21,7 +21,7 @@ async def lifespan(app_: FastAPI):
     )]
 
     from backend.api.user.models import User
-    from backend.api.collection.models import Collection
+    from backend.api.collection.models import Collection, CollectionDownloadQueryHistory
     from backend.api.photo.models import Photo, PhotoRate
     from backend.api.rate.models import Rate
     from backend.events.database import update_photo_rate_after_insert_in_rate

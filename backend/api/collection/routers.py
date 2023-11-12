@@ -1,17 +1,17 @@
 import os
 import shutil
-import tempfile
+from datetime import datetime
 from pathlib import Path
 from uuid import UUID
-from zipfile import ZipFile
 
-from fastapi import APIRouter, status, Body, Depends
+from fastapi import APIRouter, status, Body, Depends, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import FileResponse
 
 from backend.api.auth.scheme import TokenPayload
-from backend.api.collection.models import Collection
+from backend.api.collection.models import Collection, CollectionDownloadQueryHistory
 from backend.api.collection.scheme import CollectionScheme
+from backend.config.backend import BACKEND_CONFIG
 from backend.depends.access_validation import get_current_user
 from backend.depends.session import get_session_generator
 
@@ -81,32 +81,54 @@ async def delete_collection(
     status_code=status.HTTP_200_OK
 )
 async def download_collection(
+        background_tasks: BackgroundTasks,
         collection_id: UUID,
+        user: TokenPayload = Depends(get_current_user),
         session: AsyncSession = Depends(get_session_generator),
 ):
     collection = await session.get(Collection, collection_id)
     images = await Collection.get_image(session, collection_id)
 
-    if not Path(f'/tmp/collections/').is_dir():
-        os.mkdir('/tmp/collections/')
-    if not Path(f'/tmp/collections/{collection_id}').is_dir():
-        os.mkdir(f'/tmp/collections/{collection_id}')
-        os.mkdir(f'/tmp/collections/{collection_id}/images/')
+    if not Path(BACKEND_CONFIG.collection_path).is_dir():
+        os.mkdir(BACKEND_CONFIG.collection_path)
+    if not Path(f'{BACKEND_CONFIG.collection_path}{collection_id}').is_dir():
+        os.mkdir(f'{BACKEND_CONFIG.collection_path}{collection_id}')
+        os.mkdir(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/')
     else:
-        shutil.rmtree(f'/tmp/collections/{collection_id}/images/')
-        os.mkdir(f'/tmp/collections/{collection_id}/images/')
+        shutil.rmtree(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/')
+        os.mkdir(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/')
 
     for image in images:
-        with open(f'/tmp/collections/{collection_id}/images/{image.name}.png', mode='wb') as file:
+        with open(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/{image.name}.png', mode='wb') as file:
             file.write(image.file)
 
     shutil.make_archive(
-        f'/tmp/collections/{collection_id}/{collection.name}',
+        f'{BACKEND_CONFIG.collection_path}{collection_id}/{collection.name}',
         'zip',
-        f'/tmp/collections/{collection_id}/images'
+        f'{BACKEND_CONFIG.collection_path}{collection_id}/images'
     )
     response = FileResponse(
-        path=f'/tmp/collections/{collection_id}/{collection.name}.zip',
-        filename=f"{collection.name}.zip"
+        path=f'{BACKEND_CONFIG.collection_path}{collection_id}/{collection.name}.zip',
+        filename=f"{collection.name}.zip",
     )
+    file_size = os.path.getsize(f'{BACKEND_CONFIG.collection_path}{collection_id}/{collection.name}.zip')
+    background_tasks.add_task(save_request, session, collection_id, user.sub, file_size)
+    background_tasks.add_task(delete_collection_zip_files_task, collection_id)
     return response
+
+
+async def delete_collection_zip_files_task(collection_id: UUID):
+    shutil.rmtree(f'{BACKEND_CONFIG.collection_path}{collection_id}/')
+
+
+async def save_request(
+        session: AsyncSession,
+        collection_id: UUID,
+        sender_id: UUID,
+        file_size: int
+):
+    await CollectionDownloadQueryHistory(
+        collection_id=collection_id,
+        sender_id=sender_id,
+        file_size=file_size
+    ).create(session)

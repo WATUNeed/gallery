@@ -16,8 +16,6 @@ RUN pip install -U pip &&  \
 
 COPY backend/ /src/backend/
 
-# COPY app/run_consume.py /src/run_consume.py
-
 WORKDIR /src/
 
 # CMD ["/bin/bash", "-c", "source uvicorn backend.main:app --host 0.0.0.0 --port 8000"]

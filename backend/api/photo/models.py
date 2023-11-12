@@ -1,8 +1,8 @@
 import typing
 import uuid
 
-from sqlalchemy import func, UUID, String, ForeignKey, Integer, select, event, Float, TypeDecorator
-from sqlalchemy.orm import mapped_column, Mapped, relationship, Session
+from sqlalchemy import func, UUID, String, ForeignKey, Float, TypeDecorator
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from backend.api.base_classes.models import Base
 from backend.api.photo.mixin import PhotoMixin
@@ -17,8 +17,6 @@ def _user():
 
 
 class HexByteString(TypeDecorator):
-    """Convert Python bytestring to string with hexadecimal digits and back for storage."""
-
     impl = String
 
     def process_bind_param(self, value, dialect):
@@ -51,6 +49,7 @@ class Photo(Base, PhotoMixin):
 
     name: Mapped[str] = mapped_column(String(32), nullable=False)
     description: Mapped[str] = mapped_column(String(256), nullable=True)
+
     file: Mapped[bytes] = mapped_column(HexByteString, nullable=False)
 
     rate: Mapped[int] = mapped_column(Float, default=0, nullable=False)
@@ -66,5 +65,4 @@ class PhotoRate(Base):
     __tablename__ = "Photo_Rate"
 
     rate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("RateTable.id"), primary_key=True)
-
     photo_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("PhotoTable.id"), primary_key=True)
