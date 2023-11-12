@@ -1,8 +1,8 @@
 import typing
 import uuid
 
-from sqlalchemy import UUID, func, ForeignKey, String, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import UUID, func, ForeignKey, Integer, event, Connection
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
 from backend.api.base_classes.models import Base
 from backend.api.rate.mixin import RateMixin
@@ -28,12 +28,10 @@ class Rate(Base, RateMixin):
     )
     author: Mapped[_user()] = relationship(cascade="save-update", lazy='subquery')
 
-    rate: Mapped[str] = mapped_column(Integer, nullable=False)
+    rate: Mapped[int] = mapped_column(Integer, nullable=False)
 
     photos: Mapped[list["Photo"]] = relationship(
-        secondary="Photo_Rate", back_populates="rating", viewonly=True
-    )
-
-    photos_associations: Mapped[list["PhotoRate"]] = relationship(
-        back_populates="rate"
+        back_populates="rating",
+        secondary='Photo_Rate',
+        lazy='select'
     )

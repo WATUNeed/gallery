@@ -1,8 +1,8 @@
 import typing
 import uuid
 
-from sqlalchemy import func, UUID, String, ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import func, UUID, String, ForeignKey, Integer, select, event, Float, TypeDecorator
+from sqlalchemy.orm import mapped_column, Mapped, relationship, Session
 
 from backend.api.base_classes.models import Base
 from backend.api.photo.mixin import PhotoMixin
@@ -14,6 +14,20 @@ if typing.TYPE_CHECKING:
 def _user():
     from backend.api.user.models import User
     return User
+
+
+class HexByteString(TypeDecorator):
+    """Convert Python bytestring to string with hexadecimal digits and back for storage."""
+
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        if not isinstance(value, bytes):
+            raise TypeError("HexByteString columns support only bytes values.")
+        return value.hex()
+
+    def process_result_value(self, value, dialect):
+        return bytes.fromhex(value) if value else None
 
 
 class Photo(Base, PhotoMixin):
@@ -37,24 +51,20 @@ class Photo(Base, PhotoMixin):
 
     name: Mapped[str] = mapped_column(String(32), nullable=False)
     description: Mapped[str] = mapped_column(String(256), nullable=True)
-    file: Mapped[str] = mapped_column(String, nullable=False)
+    file: Mapped[bytes] = mapped_column(HexByteString, nullable=False)
+
+    rate: Mapped[int] = mapped_column(Float, default=0, nullable=False)
 
     rating: Mapped[list["Rate"]] = relationship(
-        secondary="Photo_Rate", back_populates="photos", viewonly=True
-    )
-
-    rating_associations: Mapped[list["PhotoRate"]] = relationship(
-        back_populates="photo"
+        back_populates="photos",
+        secondary='Photo_Rate',
+        lazy='select'
     )
 
 
 class PhotoRate(Base):
     __tablename__ = "Photo_Rate"
 
-    rate_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("RateTable.id"), primary_key=True)
+    rate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("RateTable.id"), primary_key=True)
 
-    photo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("PhotoTable.id"), primary_key=True)
-
-    rate: Mapped["Rate"] = relationship(back_populates="photos_associations")
-
-    photo: Mapped["Photo"] = relationship(back_populates="rating_associations")
+    photo_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("PhotoTable.id"), primary_key=True)

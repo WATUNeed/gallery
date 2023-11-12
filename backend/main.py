@@ -14,12 +14,17 @@ async def lifespan(app_: FastAPI):
     from backend.api.user.routers import users_router
     from backend.api.collection.routers import collection_router
     from backend.api.photo.routers import photo_router
-    [app_.include_router(router) for router in (auth_router, users_router, collection_router, photo_router)]
+    from backend.api.rate.routers import rating_router
+    from backend.api.admin_panel.routers import admin_panel_router
+    [app_.include_router(router) for router in (
+        auth_router, users_router, collection_router, photo_router, rating_router, admin_panel_router
+    )]
 
     from backend.api.user.models import User
     from backend.api.collection.models import Collection
     from backend.api.photo.models import Photo, PhotoRate
     from backend.api.rate.models import Rate
+    from backend.events.database import update_photo_rate_after_insert_in_rate
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

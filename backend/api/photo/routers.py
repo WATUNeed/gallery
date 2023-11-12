@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, status, Body, Depends
+from fastapi import APIRouter, status, Body, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.auth.scheme import TokenPayload
@@ -21,11 +21,16 @@ photo_router = APIRouter(
     response_model=PhotoScheme.View,
 )
 async def create_photo(
-        body: PhotoScheme.PostBody = Body(...),
+        name: str,
+        collection_id: UUID,
+        description: str | None = None,
+        file: bytes = File(),
         user: TokenPayload = Depends(get_current_user),
         session: AsyncSession = Depends(get_session_generator),
 ) -> PhotoScheme.View:
-    photo = await Photo(**body.model_dump(), author_id=user.sub).create(session)
+    photo = await Photo(
+        name=name, collection_id=collection_id, description=description, file=file, author_id=user.sub
+    ).create(session)
     return photo
 
 
