@@ -15,6 +15,7 @@ RUN pip install -U pip &&  \
     pip install --no-cache-dir -r /tmp/requirements/backend.txt
 
 COPY backend/ /src/backend/
+COPY frontend/ /src/frontend/
 
 WORKDIR /src/
 

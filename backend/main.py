@@ -2,10 +2,14 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.templating import Jinja2Templates
 
 from backend.api.base_classes.models import engine, Base
 from backend.middleware.catch_exceptions import RequestHandlingMiddleware
 from backend.middleware.process_time import ProcessTimerMiddleware
+
+
+templates = Jinja2Templates(directory="frontend/templates")
 
 
 @asynccontextmanager

@@ -24,3 +24,7 @@ aio_pika
 
 scikit-learn
 pandas
+
+Jinja2
+python-multipart
+plotly

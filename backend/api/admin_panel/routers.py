@@ -1,5 +1,5 @@
-import math
 import random
+import plotly.express as px
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -7,12 +7,14 @@ from fastapi import APIRouter, status, Depends
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from faker import Faker
+from starlette.requests import Request
 
 from backend.api.auth.security import Hasher
 from backend.api.collection.models import Collection, CollectionDownloadQueryHistory
 from backend.api.collection.tasks import predict_requests_in_hour
 from backend.api.user.models import User
 from backend.depends.session import get_session_generator
+from backend.main import templates
 
 admin_panel_router = APIRouter(
     prefix='/admin-panel',
@@ -81,16 +83,23 @@ async def create_collections(session: AsyncSession = Depends(get_session_generat
     status_code=status.HTTP_200_OK
 )
 async def check_predication_by_hour(
+        request: Request,
         hour: int,
         session: AsyncSession = Depends(get_session_generator)
 ):
     df = pd.DataFrame(
         [
-            {'collection_id': item.collection_id, 'file_size': item.file_size, 'created_at': item.created_at}
+            {'collection_id': item.collection_id, 'file_size': item.file_size, 'hour': item.created_at.hour}
             for item in await CollectionDownloadQueryHistory.get_history(session)
         ]
     )
-    print(df.iloc[[math.floor(predict_requests_in_hour(df, hour))]])
+    predict_collection, results_df = predict_requests_in_hour(df, hour)
+
+    print(predict_collection)
+    fig = px.scatter(x=results_df['distance'], y=results_df['predictions'], log_x=True, log_y=True)
+    fig.write_html("/src/frontend/result.html")
+    context = {"request": request}
+    return templates.TemplateResponse("result.html", context)
 
 
 @admin_panel_router.post(
@@ -119,7 +128,7 @@ async def create_download_collections_query_history(
     users: list[User] = (await User.get_all(session)).all()
     collections: list[Collection] = (await Collection.get_with_related(session)).all()
     to_insert = []
-    for _ in range(100_000):
+    for _ in range(1_000):
         user = random.choice(users)
         collection = random.choice(collections)
         file_size = random.randint(1, 1 * 1024 * 1024 * 1024)
