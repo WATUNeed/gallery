@@ -29,7 +29,7 @@ class Collection(Base, CollectionMixin):
     )
     author: Mapped[_user()] = relationship(lazy='subquery')
 
-    name: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String(256), nullable=True)
 
     photos: Mapped[list['Photo']] = relationship(
