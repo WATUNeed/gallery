@@ -28,6 +28,7 @@ async def create_photo(
         user: TokenPayload = Depends(get_current_user),
         session: AsyncSession = Depends(get_session_generator),
 ) -> PhotoScheme.View:
+    print(file)
     photo = await Photo(
         name=name, collection_id=collection_id, description=description, file=file, author_id=user.sub
     ).create(session)

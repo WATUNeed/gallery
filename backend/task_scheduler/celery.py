@@ -18,12 +18,12 @@ celery_app = Celery(
 
 @celery_app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    from backend.api.collection.tasks import task_make_magic
+    from backend.api.collection.tasks import task_predict_collections
 
     sender.add_periodic_task(
         10.0,
         # crontab(minute='*'),
-        task_make_magic.s(),
+        task_predict_collections.s(),
         name='Every minute'
     )
 

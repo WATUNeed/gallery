@@ -35,4 +35,4 @@ class CollectionMixin:
 class CollectionDownloadQueryHistoryMixin:
     @classmethod
     async def get_history(cls, session: AsyncSession):
-        return await session.scalars(sa.select(cls))
+        return await session.scalars(sa.select(cls).options(selectinload(cls.collection)))

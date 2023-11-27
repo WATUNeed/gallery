@@ -1,3 +1,4 @@
+import subprocess
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -9,7 +10,7 @@ from backend.middleware.catch_exceptions import RequestHandlingMiddleware
 from backend.middleware.process_time import ProcessTimerMiddleware
 
 
-templates = Jinja2Templates(directory="frontend/templates")
+templates = Jinja2Templates(directory="frontend")
 
 
 @asynccontextmanager
@@ -31,13 +32,13 @@ async def lifespan(app_: FastAPI):
     from backend.events.database import update_photo_rate_after_insert_in_rate
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
     yield
 
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(RequestHandlingMiddleware)
 app.add_middleware(ProcessTimerMiddleware)
-
 
 if __name__ == '__main__':
     uvicorn.run(app)

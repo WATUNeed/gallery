@@ -1,16 +1,16 @@
 import os
 import shutil
-from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, status, Body, Depends, BackgroundTasks
+from fastapi import APIRouter, status, Body, Depends, BackgroundTasks, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import FileResponse
 
 from backend.api.auth.scheme import TokenPayload
 from backend.api.collection.models import Collection, CollectionDownloadQueryHistory
 from backend.api.collection.scheme import CollectionScheme
+from backend.cache.redis_ import RedisContextManager
 from backend.config.backend import BACKEND_CONFIG
 from backend.depends.access_validation import get_current_user
 from backend.depends.session import get_session_generator
@@ -91,27 +91,34 @@ async def download_collection(
 
     if not Path(BACKEND_CONFIG.collection_path).is_dir():
         os.mkdir(BACKEND_CONFIG.collection_path)
-    if not Path(f'{BACKEND_CONFIG.collection_path}{collection_id}').is_dir():
-        os.mkdir(f'{BACKEND_CONFIG.collection_path}{collection_id}')
-        os.mkdir(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/')
+
+    main_dir = f'{BACKEND_CONFIG.collection_path}{collection_id}'
+    async with RedisContextManager() as redis:
+        image = await redis.get_value(str(collection_id))
+        if image is not None:
+            collection_name = collection.name.replace(' ', '_')
+            return FileResponse(path=f'{main_dir}/{collection_name}.zip', filename=f"{collection_name}.zip")
+
+    if not Path(main_dir).is_dir():
+        os.mkdir(main_dir)
+        os.mkdir(f'{main_dir}/images/')
     else:
-        shutil.rmtree(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/')
-        os.mkdir(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/')
+        shutil.rmtree(f'{main_dir}/images/')
+        os.mkdir(f'{main_dir}/images/')
 
     for image in images:
-        with open(f'{BACKEND_CONFIG.collection_path}{collection_id}/images/{image.name}.png', mode='wb') as file:
+        image_name = image.name.replace(' ', '_')
+        with open(f'{main_dir}/images/{image_name}.png', mode='wb') as file:
             file.write(image.file)
 
-    shutil.make_archive(
-        f'{BACKEND_CONFIG.collection_path}{collection_id}/{collection.name}',
-        'zip',
-        f'{BACKEND_CONFIG.collection_path}{collection_id}/images'
-    )
-    response = FileResponse(
-        path=f'{BACKEND_CONFIG.collection_path}{collection_id}/{collection.name}.zip',
-        filename=f"{collection.name}.zip",
-    )
-    file_size = os.path.getsize(f'{BACKEND_CONFIG.collection_path}{collection_id}/{collection.name}.zip')
+    collection_name = collection.name.replace(' ', '_')
+    shutil.make_archive(f'{main_dir}/{collection_name}', 'zip', f'{main_dir}/images')
+
+    response = FileResponse(path=f'{main_dir}/{collection_name}.zip', filename=f"{collection_name}.zip")
+
+    file_size = os.path.getsize(f'{main_dir}/{collection_name}.zip')
+    if file_size is None:
+        file_size = 0
     background_tasks.add_task(save_request, session, collection_id, user.sub, file_size)
     background_tasks.add_task(delete_collection_zip_files_task, collection_id)
     return response

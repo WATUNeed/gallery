@@ -1,16 +1,21 @@
 import asyncio
-import math
+import os
+import shutil
+from pathlib import Path
+from uuid import UUID
 
-import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from numpy.polynomial import Polynomial
+import plotly.express as px
+from pandas import DataFrame
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import StandardScaler
 
 from backend.api.base_classes.models import Session
-from backend.api.collection.models import CollectionDownloadQueryHistory
+from backend.api.collection.models import CollectionDownloadQueryHistory, Collection
+from backend.cache.redis_ import RedisContextManager
+from backend.config.backend import BACKEND_CONFIG
 from backend.task_scheduler import celery_app
 
 
@@ -20,108 +25,96 @@ async def get_history():
             return await CollectionDownloadQueryHistory.get_history(session)
 
 
+async def cached_predicted_calls(collection_id: UUID):
+    async with Session() as session:
+        async with session.begin():
+            collection = await session.get(Collection, collection_id)
+            images = await Collection.get_image(session, collection_id)
+
+            if not Path(BACKEND_CONFIG.collection_path).is_dir():
+                os.mkdir(BACKEND_CONFIG.collection_path)
+
+            main_dir = f'{BACKEND_CONFIG.collection_path}{collection_id}'
+
+            if not Path(main_dir).is_dir():
+                os.mkdir(main_dir)
+                os.mkdir(f'{main_dir}/images/')
+            else:
+                shutil.rmtree(f'{main_dir}/images/')
+                os.mkdir(f'{main_dir}/images/')
+
+            for image in images:
+                image_name = image.name.replace(' ', '_')
+                with open(f'{main_dir}/images/{image_name}.png', mode='wb') as file:
+                    file.write(image.file)
+
+            collection_name = collection.name.replace(' ', '_')
+            shutil.make_archive(f'{main_dir}/{collection_name}', 'zip', f'{main_dir}/images')
+            async with RedisContextManager() as redis:
+                await redis.set_item(str(collection_id), '', timedelta(hours=1))
+
+
 @celery_app.task
-def task_make_magic():
-    print('work')
-    df = pd.DataFrame([item.to_dict() for item in asyncio.run(get_history())])
-    print(df.iloc[[math.floor(predict_requests_in_hour(df, datetime.now().hour))]]["collection_id"])
+def task_predict_collections():
+    df = pd.DataFrame(
+        [
+            {
+                'name': item.collection.name,
+                'collection_id': item.collection_id,
+                'file_size': item.file_size,
+                'sender_id': item.sender_id,
+                'hour': item.created_at.hour,
+            }
+            for item in asyncio.run(get_history())
+        ]
+    )
+    target_hour = datetime.utcnow().hour
+    df = prepare_calls_history_df(df, target_hour)
+    df, normalized_weights = calculate_parameters_weights(df)
+
+    result = []
+    for index in range(10):
+        result.append(df['collection_id'].iloc[index])
+        asyncio.run(cached_predicted_calls(df['collection_id'].iloc[index]))
+    return result
 
 
-# def predict_requests_in_hour(df: pd.DataFrame, target_hour: int):
-#     # Data Preparation
-#     # Count the frequency of records created in each hour
-#     hour_counts = df['hour'].value_counts()
-#
-#     # Create a new DataFrame with row index and the frequency for the target hour
-#     x = np.array(df.index).reshape(-1, 1)
-#     y = np.array([hour_counts.get(hour, 0) if hour == target_hour else 0 for hour in df['hour']])
-#
-#     # Polynomial Features for Linear Regression
-#     poly = PolynomialFeatures(degree=2)
-#     x_poly = poly.fit_transform(x)
-#
-#     # Model Construction
-#     model = LinearRegression()
-#     model.fit(x_poly, y)
-#
-#     # Prediction
-#     # Predict the frequency for each row index
-#     y_pred = model.predict(x_poly)
-#
-#     # Find the row index with the highest predicted frequency for the target hour
-#     max_index = np.argmax(y_pred)
-#     print(df.iloc[max_index])
-#     return df.iloc[max_index]
+def normalize_distance(distance):
+    return 1 - min(max(distance, 0), 1)
 
-# def predict_requests_in_hour(df, target_hour):
-#     # Extracting hour data and counting occurrences
-#     hour_counts = df['hour'].value_counts().sort_index()
-#     x = np.array(hour_counts.index).reshape(-1, 1)
-#     y = np.array(hour_counts.values)
-#
-#     # Polynomial regression
-#     poly = PolynomialFeatures(degree=2)
-#     x_poly = poly.fit_transform(x)
-#     poly_model = LinearRegression()
-#     poly_model.fit(x_poly, y)
-#
-#     # Predicting for all hours and calculating distance from target hour
-#     all_hours = np.arange(24).reshape(-1, 1)
-#     all_hours_poly = poly.fit_transform(all_hours)
-#     predictions = poly_model.predict(all_hours_poly)
-#     distance_from_target = np.abs(all_hours - target_hour)
-#
-#     print(distance_from_target)
-#     # Combining predictions and distances into a DataFrame
-#     results_df = pd.DataFrame({
-#         'hour': all_hours.flatten(),
-#         'prediction': predictions,
-#         'distance': distance_from_target.flatten()
-#     })
-#
-#     # Sorting by prediction and distance
-#     results_df.sort_values(by=['prediction', 'distance'], ascending=[False, True], inplace=True)
-#
-#     # Selecting top 5 records
-#     top_records = results_df.head(10000000)
-#
-#     # Constructing the final DataFrame to return
-#     final_df = pd.DataFrame()
-#     for hour in top_records['hour']:
-#         matched_rows = df[df['hour'] == hour]
-#         final_df = pd.concat([final_df, matched_rows.head(1)])
-#     print(final_df)
-#     return final_df.reset_index(drop=True), results_df
 
-def predict_requests_in_hour(df, target_hour):
-    # Extracting hours and the count of each hour
-    hour_counts = df['hour'].value_counts().sort_index()
-    x = hour_counts.index.values.reshape(-1, 1)
-    y = hour_counts.values
+def prepare_calls_history_df(df: DataFrame, target_hour: int) -> DataFrame:
+    df['hour_repeats'] = df.groupby('collection_id')['hour'].transform('count')
+    df['proximity_to_target_hour'] = df['hour'].apply(lambda hour: normalize_distance(abs(target_hour - hour) / 23))
+    df['file_size'] = abs(df['file_size'] / df['file_size'].max())
+    df['senders_count'] = df.groupby('collection_id')['sender_id'].transform('nunique')
+    df['priority'] = (df['hour_repeats'] + df['file_size'] + df['senders_count'] + df['proximity_to_target_hour'])
+    return df
 
-    # Polynomial features
-    poly = PolynomialFeatures(degree=2)
-    x_poly = poly.fit_transform(x)
 
-    # Polynomial regression
+def calculate_parameters_weights(df: DataFrame):
+    x = df[['proximity_to_target_hour', 'file_size', 'hour_repeats', 'senders_count']]
+    y = df['priority']
+
+    scaler = StandardScaler()
+    x_scaled = scaler.fit_transform(x)
+
     model = LinearRegression()
-    model.fit(x_poly, y)
+    model.fit(x_scaled, y)
 
-    # Predict for each hour
-    hours = np.array(range(24)).reshape(-1, 1)
-    hours_poly = poly.transform(hours)
-    predictions = model.predict(hours_poly)
+    weights = model.coef_
 
-    # Creating a DataFrame with hours and predictions
-    prediction_df = pd.DataFrame({'hour': hours.flatten(), 'predictions': predictions})
+    normalized_weights = {name: weight for name, weight in zip(x.columns, weights / weights.sum())}
 
-    # Calculating the distance from the target hour and sorting
-    prediction_df['distance'] = abs(prediction_df['hour'] - target_hour)
-    sorted_df = prediction_df.sort_values(by=['distance', 'predictions'], ascending=[True, False])
+    df['priority'] = (sum(weight * df[param] for param, weight in normalized_weights.items()))
 
-    # Getting the top 5 records
-    top_hours = sorted_df.head(5)['hour'].values
+    df = df.sort_values(by='priority', ascending=False)
 
-    # Filtering the original DataFrame to get the top 5 records with collection_id
-    result_df = df[df['hour'].isin(top_hours)].drop_duplicates(subset=['hour'])
-    return result_df.sort_values(by='hour'), sorted_df
+    return df, normalized_weights
+
+
+def save_fig_to_html(df: DataFrame):
+    for param in ['name', 'file_size', 'hour_repeats', 'senders_count', 'proximity_to_target_hour']:
+        df = df.sort_values(by='priority', ascending=False)
+        fig = px.scatter(df, x=param, y='priority')
+        fig.write_html(f"/src/frontend/{param}.html")

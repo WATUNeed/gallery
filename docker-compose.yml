@@ -11,33 +11,37 @@ services:
       - .env
     command:
       uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - collections:/tmp/collections
     depends_on:
       - redis
       - postgres
 
-#  celery-worker:
-#    container_name: gallery-celery-worker
-#    build:
-#      dockerfile: backend.Dockerfile
-#    env_file:
-#      - .env
-#    command:
-#      celery -A backend.task_scheduler worker -l INFO
-#    depends_on:
-#      - postgres
-#      - rabbitmq
-#
-#  celery-beat:
-#    container_name: gallery-celery-beat
-#    build:
-#      dockerfile: backend.Dockerfile
-#    env_file:
-#      - .env
-#    command:
-#      celery -A backend.task_scheduler beat -l INFO
-#    depends_on:
-#      - postgres
-#      - rabbitmq
+  celery-worker:
+    container_name: gallery-celery-worker
+    build:
+      dockerfile: backend.Dockerfile
+    env_file:
+      - .env
+    command:
+      celery -A backend.task_scheduler worker -l INFO
+    volumes:
+      - collections:/tmp/collections
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  celery-beat:
+    container_name: gallery-celery-beat
+    build:
+      dockerfile: backend.Dockerfile
+    env_file:
+      - .env
+    command:
+      celery -A backend.task_scheduler beat -l INFO
+    depends_on:
+      - postgres
+      - rabbitmq
 
   postgres:
     container_name: gallery-postgres
@@ -90,3 +94,4 @@ volumes:
   postgres:
   pgadmin:
   data: {}
+  collections:

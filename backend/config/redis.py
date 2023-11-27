@@ -14,7 +14,7 @@ class RedisConfig(BaseSettings):
     bot_db_index: int
     api_db_index: int
     encoding: str = 'utf8'
-    decode_responses: bool = True
+    decode_responses: bool = False
 
     def get_redis_attributes(self, index: int) -> dict[str, str | int | bool]:
         return {
