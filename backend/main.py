@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 
 from backend.api.base_classes.models import engine, Base
+from backend.cache.redis_ import RedisContextManager
 from backend.middleware.catch_exceptions import RequestHandlingMiddleware
 from backend.middleware.process_time import ProcessTimerMiddleware
 
@@ -32,6 +33,9 @@ async def lifespan(app_: FastAPI):
     from backend.events.database import update_photo_rate_after_insert_in_rate
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    async with RedisContextManager() as redis:
+        await redis.connect_fastapi_cache()
 
     yield
 

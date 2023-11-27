@@ -56,7 +56,8 @@ async def create_users(
 )
 async def get_redis_keys():
     async with RedisContextManager() as redis:
-        return await redis.get_keys()
+        responce = {key: await redis.get_value(key) for key in await redis.get_keys()}
+        return responce
 
 
 @admin_panel_router.post(

@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, status, Body, Depends, BackgroundTasks, Response
+from fastapi_cache.decorator import cache
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import FileResponse
 
@@ -80,6 +81,7 @@ async def delete_collection(
     path='/download/',
     status_code=status.HTTP_200_OK
 )
+@cache(expire=60 * 60)
 async def download_collection(
         background_tasks: BackgroundTasks,
         collection_id: UUID,
@@ -97,6 +99,10 @@ async def download_collection(
         image = await redis.get_value(str(collection_id))
         if image is not None:
             collection_name = collection.name.replace(' ', '_')
+            file_size = os.path.getsize(f'{main_dir}/{collection_name}.zip')
+            if file_size is None:
+                file_size = 0
+            background_tasks.add_task(save_request, session, collection_id, user.sub, file_size)
             return FileResponse(path=f'{main_dir}/{collection_name}.zip', filename=f"{collection_name}.zip")
 
     if not Path(main_dir).is_dir():
